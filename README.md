@@ -1,119 +1,154 @@
 # Sistema de Gestão de Estoque (SGE)
 
-O **Sistema de Gestão de Estoque (SGE)** é uma aplicação web desenvolvida com Python, Django e Bootstrap 5, voltada ao gerenciamento de produtos e ao controle de movimentações de estoque.
+O **Sistema de Gestão de Estoque (SGE)** é uma aplicação web desenvolvida com Python e Django, com interface construída utilizando Bootstrap 5. O sistema permite gerenciar produtos e acompanhar movimentações de estoque em um único lugar.
 
-O projeto reúne funcionalidades para cadastro de produtos, marcas, categorias e fornecedores, além do registro de entradas e saídas. Também possui autenticação de usuários, controle de permissões e um dashboard com indicadores para acompanhamento das operações.
+O projeto utiliza **Docker Compose** para executar a aplicação Django e o banco de dados **PostgreSQL** em serviços separados, facilitando a configuração do ambiente.
 
 ## Funcionalidades
 
 - **Produtos:** cadastro, consulta, edição e exclusão de produtos.
-- **Marcas e categorias:** organização e gerenciamento dos produtos cadastrados.
+- **Marcas e categorias:** organização dos produtos cadastrados.
 - **Fornecedores:** cadastro e gerenciamento de fornecedores.
 - **Entradas de estoque:** registro de mercadorias recebidas.
 - **Saídas de estoque:** controle das movimentações de saída.
-- **Dashboard:** visualização de indicadores e gráficos de estoque e vendas.
-- **Autenticação:** acesso ao sistema por meio de login.
-- **Permissões:** controle de acesso às funcionalidades conforme as permissões de cada usuário.
+- **Dashboard:** indicadores e gráficos relacionados ao estoque e às vendas.
+- **Autenticação e permissões:** controle de acesso dos usuários.
 - **API REST:** endpoints para integração e manipulação de dados.
 
 ## Tecnologias utilizadas
 
-- Python
-- Django 6.1.2
+- Python 3.14
+- Django 6.1
 - Django REST Framework
 - Simple JWT
-- Bootstrap 5
-- HTML e CSS
-- JavaScript
-- Chart.js
+- PostgreSQL 18
+- Docker e Docker Compose
+- Bootstrap 5, HTML e CSS
+- JavaScript e Chart.js
 
 ## Pré-requisitos
 
-Antes de executar o projeto, certifique-se de ter instalado:
+Para executar a versão conteinerizada, instale:
 
-- Python compatível com Django 6.1
-- Git
-- Pip
+- [Git](https://git-scm.com/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (inclui Docker Compose)
 
-As bibliotecas necessárias estão disponíveis no arquivo `requirements.txt`.
-
-## Instalação e configuração
+## Como executar com Docker
 
 ### 1. Clonar o repositório
 
 ```bash
 git clone https://github.com/rimarassi/sge.git
-```
-
-Acesse o diretório do projeto:
-
-```bash
 cd sge
 ```
 
-### 2. Criar e ativar o ambiente virtual
+### 2. Configurar as variáveis de ambiente
 
-Crie um ambiente virtual:
+Na raiz do projeto, crie um arquivo chamado `.env`, no mesmo diretório do `docker-compose.yml`, com as variáveis abaixo:
+
+```dotenv
+ENVIRONMENT=prd
+POSTGRES_DB=sge
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=defina_uma_senha_local
+POSTGRES_HOST=sge_db
+POSTGRES_PORT=5432
+```
+
+Substitua `defina_uma_senha_local` por uma senha de sua escolha. O arquivo `.env` contém configurações locais e não deve ser enviado ao GitHub.
+
+### 3. Construir e iniciar os serviços
+
+Com o Docker Desktop em execução, execute:
 
 ```bash
-python -m venv venv
+docker compose up --build -d
 ```
 
-Ative o ambiente virtual no Windows:
+O Compose inicia dois serviços:
 
-```powershell
-.\venv\Scripts\Activate.ps1
-```
+- `sge_web`: aplicação Django, disponível na porta `8000`.
+- `sge_db`: banco de dados PostgreSQL, disponível na porta `5432` para conexões a partir do computador host.
 
-### 3. Instalar as dependências
+O Dockerfile executa as migrações do Django ao iniciar a aplicação.
 
-Com o ambiente virtual ativado, execute:
+### 4. Criar um usuário administrador
 
 ```bash
-pip install -r requirements.txt
+docker compose exec sge_web python manage.py createsuperuser
 ```
 
-Para instalar também as dependências de desenvolvimento, consulte o arquivo `requirements_dev.txt`.
+Siga as instruções no terminal para definir o usuário e a senha.
 
-### 4. Configurar o banco de dados
+### 5. Acessar o sistema
 
-Execute as migrações para criar as tabelas necessárias:
+- **Aplicação:** [http://localhost:8000/](http://localhost:8000/)
+- **Painel administrativo:** [http://localhost:8000/admin/](http://localhost:8000/admin/)
+
+### Comandos úteis do Docker Compose
+
+Ver os serviços em execução:
 
 ```bash
-python manage.py migrate
+docker compose ps
 ```
 
-### 5. Criar um superusuário
-
-Para gerenciar usuários e permissões pelo painel administrativo do Django, execute:
+Acompanhar os logs da aplicação:
 
 ```bash
-python manage.py createsuperuser
+docker compose logs -f sge_web
 ```
 
-Informe o nome de usuário, e-mail (opcional) e senha solicitados no terminal.
-
-### 6. Executar o projeto
-
-Inicie o servidor de desenvolvimento:
+Parar os serviços sem excluir os dados do banco:
 
 ```bash
-python manage.py runserver
+docker compose down
 ```
 
-Após a inicialização, o sistema estará disponível em:
+Iniciar novamente os serviços:
 
-**Aplicação:** http://127.0.0.1:8000/
+```bash
+docker compose up -d
+```
 
-**Painel administrativo:** http://127.0.0.1:8000/admin/
+Os dados do PostgreSQL são armazenados no volume nomeado `postgres_data`, para persistirem quando os contêineres forem recriados. **Evite usar `docker compose down -v` se quiser preservar os dados**, pois esse comando também remove os volumes declarados pelo Compose.
 
-## Autenticação e permissões
+## Executar localmente sem Docker (opcional)
 
-O SGE utiliza o sistema de autenticação do Django para controlar o acesso dos usuários.
+A configuração de desenvolvimento também pode usar SQLite, conforme a variável `ENVIRONMENT` definida nas configurações do Django.
 
-As permissões podem ser configuradas pelo administrador, permitindo definir quais usuários poderão visualizar, cadastrar, editar ou excluir registros.
+1. Crie e ative um ambiente virtual:
 
-A aplicação também possui uma estrutura de autenticação para utilização com a API.
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+   ```
+
+2. Instale as dependências:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Execute as migrações:
+
+   ```bash
+   python manage.py migrate
+   ```
+
+4. Crie um administrador, se necessário:
+
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+5. Inicie o servidor:
+
+   ```bash
+   python manage.py runserver
+   ```
+
+Acesse [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 ## Estrutura do projeto
 
@@ -127,15 +162,14 @@ sge/
 ├── outflows/             # Saídas de estoque
 ├── products/             # Produtos
 ├── suppliers/            # Fornecedores
-├── manage.py
-├── requirements.txt
-└── requirements_dev.txt
+├── Dockerfile             # Imagem da aplicação Django
+├── docker-compose.yml     # Serviços Django e PostgreSQL
+├── .dockerignore          # Arquivos ignorados no build
+├── requirements.txt       # Dependências da aplicação
+├── requirements_dev.txt   # Dependências de desenvolvimento
+└── manage.py
 ```
 
 ## Objetivo do projeto
 
-O SGE foi desenvolvido com o objetivo de aprimorar conhecimentos em desenvolvimento web utilizando Python e Django.
-
-Durante o desenvolvimento, foram aplicados conceitos de operações CRUD, relacionamento entre modelos, autenticação, gerenciamento de permissões, APIs REST e construção de interfaces web.
-
-O projeto também serve como prática para a organização de aplicações Django em módulos independentes.
+O SGE foi desenvolvido para praticar desenvolvimento web com Python e Django, incluindo operações CRUD, relacionamento entre modelos, autenticação, permissões, APIs REST e construção de interfaces web. A configuração com Docker Compose e PostgreSQL também permite praticar a conteinerização e a integração da aplicação com um banco de dados relacional.
