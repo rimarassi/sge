@@ -13,9 +13,12 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'dev')
 
@@ -23,12 +26,12 @@ ENVIRONMENT = os.getenv('ENVIRONMENT', 'dev')
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rm_h-ao(4ag9$#*$o+tpqw*y3+04_easx79f6$mt!v6xf+ldtl'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -51,6 +54,7 @@ INSTALLED_APPS = [
     'outflows',
     'products',
     'suppliers',
+    'ai',
 ]
 
 LOGIN_URL = 'login'
@@ -168,6 +172,10 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCES_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
+
+
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+GROQ_MODEL = os.getenv('GROQ_MODEL')
